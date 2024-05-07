@@ -1,4 +1,5 @@
 # Business-Analytics-Capstone-project
+I will not add dataset because of private information
 ## AArete Consulting Enhancing Member Engagement
 AArete Consulting has provided The University of Iowa's Business Analytics Capstone Section 5 Team 1 with data regarding a segment of Medicare members to gain a better understanding of what influences member engagement. AArete currently assists Medicare plans across the country to increase engagement and, in turn, increase the star rating of those plans. The Enhancing Member Engagement project purpose is to assit AArete Consulting with building a model to predict Medicare member engagement. 
 
