@@ -1,0 +1,66 @@
+-- This file includes queries used for exploratory data analysis on our dataset.
+
+-- QUERY 1: Total unique members in the Claims Data Table 
+SELECT COUNT(DISTINCT MEMBER_ID) AS UniqueMembersCount 
+FROM CLAIM; 
+
+-- QUERY 2: The percentage breakdown of Professional (M) and Institutional (H) claims in the Claims Data Table 
+SELECT CLAIM_FORM_TYPE_CD, COUNT(*) AS claim_count, (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM CLAIM)) AS percentage 
+FROM CLAIM 
+GROUP BY CLAIM_FORM_TYPE_CD; 
+
+-- QUERY 3: The average amount allowed for different medical procedures
+SELECT CPT4_PROC_CD, AVG(LINE_ALLOWED_AMT) AS AvgAllowedAmount 
+FROM CLAIM 
+GROUP BY CPT4_PROC_CD 
+ORDER BY AvgAllowedAmount DESC;
+
+-- QUERY 4: The distribution of CLAIM_TYPE_DESC values within the dataset? 
+SELECT CLAIM_TYPE_DESC, COUNT(*) AS Count, (COUNT(*) * 100.0 / SUM(COUNT(*)) OVER ()) AS Percentage 
+FROM CLAIM 
+GROUP BY CLAIM_TYPE_DESC;
+
+-- QUERY 5: A summary of the distribution of allowed amounts for different claim types: 
+SELECT CLAIM_TYPE_DESC, COUNT(*) AS ClaimCount, MIN(LINE_ALLOWED_AMT) AS MinBilledAmount, MAX(LINE_ALLOWED_AMT) AS MaxBilledAmount, AVG(LINE_ALLOWED_AMT) AS AvgBilledAmount, SUM(LINE_ALLOWED_AMT) AS TotalBilledAmount 
+FROM CLAIM 
+GROUP BY CLAIM_TYPE_DESC; 
+
+-- QUERY 6: Overall compliance rate for each metric (Breast Cancer Screening, Colorectal Cancer Screening, Influenza vaccine, Diabetes care, Resubmission)
+SELECT (SUM(BREAST_CANCER_SCR_COMPLIANCE) / SUM(BREAST_CANCER_SCR_ELIG)) * 100 AS BreastCancerComplianceRate, (SUM(COLORECTAL_CANCER_SCR_COMPLIANCE) / SUM(COLORECTAL_CANCER_SCR_ELIG)) * 100 AS ColorectalCancerComplianceRate, (SUM(FLU_VAC_COMPLIANCE) / SUM(FLU_VAC_ELIG)) * 100 AS InfluenzaVaccineComplianceRate, (SUM(DIABETES_CARE_COMPLIANCE) / SUM(DIABETES_CARE_ELIG)) * 100 AS DiabetesCareComplianceRate, (SUM(READMISSION_FLAG) / SUM(READMISSION_ELIG)) * 100 AS ReadmissionComplianceRate 
+FROM MEASURE_RESULTS; 
+
+-- QUERY 7: The distribution of compliance rates based on the member's state
+SELECT md.MBR_STATE_CD, (AVG(mr.BREAST_CANCER_SCR_COMPLIANCE))* 100 AS AVG_BREAST_CANCER_SCR_COMPLIANCE, (AVG(mr.COLORECTAL_CANCER_SCR_COMPLIANCE)) *100 AS AVG_COLORECTAL_CANCER_SCR_COMPLIANCE, (AVG(mr.FLU_VAC_COMPLIANCE))*100 AS AVG_FLU_VAC_COMPLIANCE, (AVG(mr.DIABETES_CARE_COMPLIANCE))*100 AS AVG_DIABETES_CARE_COMPLIANCE, (AVG(mr.RESUBMISSION_COMPLIANCE))*100 AS AVG_RESUBMISSION_COMPLIANCE 
+FROM MEMBER md JOIN measure_results mr ON md.MEMBER_ID = mr.MEMBER_ID 
+GROUP BY md.MBR_STATE_CD; 
+
+-- QUERY 8: Total social determinent of health flagged members in each county
+Select mbr_county, count(*) as totalSDOH 
+from member 
+where SDOH_flag = 1 
+group by mbr_county 
+
+-- QUERY 9: Total SDOH by state
+Select mbr_state_cd, count(*) as totalSDOH 
+from member 
+where SDOH_flag = 1 
+group by mbr_state_cd; 
+
+-- QUERY 10:  The average compliance percentage for patients who have  a SDOH
+Select avg(Targetvar)  as Avg_Per_w_SDOH 
+from (Select r.member_id, Round((Sum(BREAST_CANCER_SCR_COMPLIANCE + colorectal_cancer_scr_compliance +flu_vac_compliance + DIABETES_CARE_COMPLIANCE)/sum(Breast_cancer_scr_elig + colorectal_cancer_scr_elig +flu_vac_elig + Diabetes_care_elig))*100,2) TargetVar, sdoh_flag 
+from member m join measure_results r 
+where sdoh_flag = 1 
+group by r.member_id, sdoh_flag); 
+
+-- QUERY 11: Comparision of average compliance for SDOH column 
+Select Distinct r.member_id, Round((Sum(BREAST_CANCER_SCR_COMPLIANCE + colorectal_cancer_scr_compliance +flu_vac_compliance + DIABETES_CARE_COMPLIANCE)/sum( Breast_cancer_scr_elig + colorectal_cancer_scr_elig +flu_vac_elig + Diabetes_care_elig))*100,2) TargetVar, sdoh_flag 
+from member m join measure_results r ON m.member_id = r.member_id 
+group by r.member_id, sdoh_flag 
+order by targetvar desc, r.member_id asc; 
+
+-- QUERY 12: Are male or females more likely to have an anxiety flag?
+Select pat_sex, count(anxiety_flag) as num_w_anxiety 
+from member m join measure_results mr on m.member_id = mr.member_id 
+where anxiety_flag = 1 
+group by pat_sex; 
